@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mixtard Insulin Adjustment</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #e1bee7);
+      padding: 20px;
+      color: #333;
+    }
+
+    h1, h2, h3 {
+      color: #4a148c;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .btn {
+      background-color: #7b1fa2;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin: 6px 4px 12px 0;
+    }
+
+    .btn:hover {
+      background-color: #4a148c;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    th {
+      background-color: #6a1b9a;
+      color: white;
+      padding: 10px;
+    }
+
+    td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f3e5f5;
+    }
+
+    canvas {
+      background-color: white;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Mixtard Insulin Adjustment Tool</h1>
+  <button onclick="toggleLanguage()" class="btn">Switch to Bangla</button>
+
+  <div class="card">
+    <label id="label-meal-time" for="meal-time">Pre-meal time:</label>
+    <select id="meal-time">
+      <option value="breakfast">Breakfast</option>
+      <option value="dinner">Dinner</option>
+    </select>
+
+    <label id="label-premeal" for="premeal">Pre-meal glucose (mmol/L):</label>
+    <input type="number" id="premeal" step="0.1" />
+
+    <label id="label-morning-dose" for="morning-dose">Morning Mixtard dose (units):</label>
+    <input type="number" id="morning-dose" />
+
+    <label id="label-evening-dose" for="evening-dose">Evening Mixtard dose (units):</label>
+    <input type="number" id="evening-dose" />
+
+    <button onclick="calculateAdjustment()" class="btn">Calculate Adjustment</button>
+  </div>
+
+  <h3 id="result"></h3>
+
+  <h2 id="record-header">Dose Records</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Glucose</th>
+        <th>Morning Dose</th>
+        <th>Evening Dose</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody id="record-body"></tbody>
+  </table>
+
+  <button onclick="resetData()" class="btn">Reset All Records</button>
+
+  <h2 id="graph-header">Glucose Graph</h2>
+  <canvas id="glucoseChart" width="400" height="150"></canvas>
+
+  <script>
+    const translations = {
+      en: {
+        title: "Mixtard Insulin Adjustment Tool",
+        labelMealTime: "Pre-meal time:",
+        labelPremeal: "Pre-meal glucose (mmol/L):",
+        labelMorningDose: "Morning Mixtard dose (units):",
+        labelEveningDose: "Evening Mixtard dose (units):",
+        recordHeader: "Dose Records",
+        graphHeader: "Glucose Graph",
+      },
+      bn: {
+        title: "মিক্সটার্ড ইনসুলিন সমন্বয় টুল",
+        labelMealTime: "খাবারের আগের সময়:",
+        labelPremeal: "খাবারের আগের গ্লুকোজ (mmol/L):",
+        labelMorningDose: "সকালের ইনসুলিন ডোজ (ইউনিট):",
+        labelEveningDose: "সন্ধ্যার ইনসুলিন ডোজ (ইউনিট):",
+        recordHeader: "ডোজ রেকর্ডসমূহ",
+        graphHeader: "গ্লুকোজ গ্রাফ",
+      }
+    };
+
+    let currentLang = "en";
+
+    function toggleLanguage() {
+      currentLang = currentLang === "en" ? "bn" : "en";
+      const t = translations[currentLang];
+      document.getElementById("title").innerText = t.title;
+      document.getElementById("label-meal-time").innerText = t.labelMealTime;
+      document.getElementById("label-premeal").innerText = t.labelPremeal;
+      document.getElementById("label-morning-dose").innerText = t.labelMorningDose;
+      document.getElementById("label-evening-dose").innerText = t.labelEveningDose;
+      document.getElementById("record-header").innerText = t.recordHeader;
+      document.getElementById("graph-header").innerText = t.graphHeader;
+    }
+
+    function calculateAdjustment() {
+      const premeal = parseFloat(document.getElementById("premeal").value);
+      const mealTime = document.getElementById("meal-time").value;
+      const morningDose = parseInt(document.getElementById("morning-dose").value) || 0;
+      const eveningDose = parseInt(document.getElementById("evening-dose").value) || 0;
+
+      function getAdjustment(glucose) {
+        if (glucose < 4.4) return -2;
+        if (glucose <= 7.2) return 0;
+        if (glucose <= 9.9) return 2;
+        if (glucose <= 13.9) return 4;
+        return 6;
+      }
+
+      const adjustment = getAdjustment(premeal);
+      let adjustedMorning = morningDose;
+      let adjustedEvening = eveningDose;
+      let message = "";
+
+      if (mealTime === "breakfast") {
+        adjustedEvening += adjustment;
+        message = `Pre-breakfast glucose: ${premeal} → Adjust evening dose to ${adjustedEvening} units.`;
+      } else if (mealTime === "dinner") {
+        adjustedMorning += adjustment;
+        message = `Pre-dinner glucose: ${premeal} → Adjust morning dose to ${adjustedMorning} units.`;
+      } else {
+        message = "Only pre-breakfast and pre-dinner adjustments are supported.";
+      }
+
+      document.getElementById("result").innerText = message;
+
+      const record = {
+        date: new Date().toLocaleString(),
+        premeal,
+        morningDose: adjustedMorning,
+        eveningDose: adjustedEvening,
+      };
+
+      let records = JSON.parse(localStorage.getItem("records")) || [];
+      records.push(record);
+      localStorage.setItem("records", JSON.stringify(records));
+      updateTable();
+      updateChart(records);
+    }
+
+    function updateTable() {
+      const records = JSON.parse(localStorage.getItem("records")) || [];
+      const tbody = document.getElementById("record-body");
+      tbody.innerHTML = "";
+      records.forEach((r, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${r.date}</td>
+          <td>${r.premeal}</td>
+          <td>${r.morningDose}</td>
+          <td>${r.eveningDose}</td>
+          <td><button onclick="deleteRow(${i})">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function deleteRow(index) {
+      let records = JSON.parse(localStorage.getItem("records")) || [];
+      records.splice(index, 1);
+      localStorage.setItem("records", JSON.stringify(records));
+      updateTable();
+      updateChart(records);
+    }
+
+    function resetData() {
+      localStorage.removeItem("records");
+      updateTable();
+      updateChart([]);
+    }
+
+    let chart;
+    function updateChart(records) {
+      const ctx = document.getElementById('glucoseChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: records.map(r => r.date),
+          datasets: [
+            {
+              label: 'Pre-meal Glucose',
+              data: records.map(r => r.premeal),
+              borderColor: 'blue',
+              fill: false
+            },
+            {
+              label: 'Target Glucose (6.0)',
+              data: records.map(_ => 6.0),
+              borderColor: 'green',
+              borderDash: [5, 5],
+              fill: false
+            }
+          ]
+        }
+      });
+    }
+
+    window.onload = () => {
+      updateTable();
+      updateChart(JSON.parse(localStorage.getItem("records")) || []);
+    };
+  </script>
+</body>
+</html>
