@@ -335,19 +335,8 @@
 
     <!-- Instructions Section -->
     <div id="instructions">
-        <h2 id="instructions-header">How to Use the Insulin Tracker</h2>
-        <ul id="instructions-list">
-            <li><strong>Date:</strong> Select the date of the meal or leave it blank to default to the current date.</li>
-            <li><strong>Meal Type:</strong> Choose the type of meal (Breakfast, Lunch, Dinner).</li>
-            <li><strong>Fasting Glucose:</strong> Enter your fasting glucose value before the meal (mmol/L).</li>
-            <li><strong>Plates:</strong> Enter the number of plates for the meal (estimate of carbs).</li>
-            <li><strong>Short-acting Insulin:</strong> Enter the amount of short-acting insulin used for the meal (units).</li>
-            <li><strong>Post-meal Glucose:</strong> Enter your glucose level after the meal (mmol/L).</li>
-            <li><strong>Long-acting Insulin (Once Daily):</strong> Enter the amount of Long-acting insulin that is used once daily.</li>
-            <li><strong>Long Adjustment:</strong> This field will automatically adjust based on your fasting glucose for Breakfast.</li>
-            <li><strong>Delete Row:</strong> You can delete a specific row by clicking the "Delete" button in the corresponding row.</li>
-        </ul>
-        <p><strong>Note:</strong> This tracker helps you keep track of your insulin doses and glucose levels for better diabetes management.</p>
+        <h2 id="instructions-header"> Short & Long Acting Insulin Tracker</h2>
+       
     </div>
 
     <!-- Meal Tracker Form -->
@@ -361,9 +350,9 @@
                 <option value="Dinner">Dinner</option>
             </select>
             <input type="number" id="fasting-glucose" placeholder="Fasting Glucose" />
-            <input type="number" id="plates" placeholder="Number of Plates" />
+            <input type="number" id="plates" placeholder="Number of Rice Plates" />
             <input type="number" id="short-insulin" placeholder="Short-acting Insulin" />
-            <input type="number" id="post-glucose" placeholder="Post-meal Glucose" />
+            <input type="number" id="post-glucose" placeholder="2Hr. After Post-meal Glucose" />
             <input type="number" id="long-insulin" placeholder="Long-acting Insulin (Once Daily)" />
             <p id="live-long-adjustment"></p>
             <button type="button" onclick="addMeal()">Add Meal</button>
@@ -476,7 +465,7 @@
                 <li><strong>Delete Row:</strong> You can delete a specific row by clicking the "Delete" button in the corresponding row.</li>
             `;
         } else {
-            document.getElementById('instructions-header').textContent = "ইনসুলিন ট্র্যাকার কীভাবে ব্যবহার করবেন";
+            document.getElementById('instructions-header').textContent = "স্বল্প ও দীর্ঘ কার্যক্ষম ইনসুলিন ট্র্যাকার";
             document.getElementById('instructions-list').innerHTML = `
                 <li><strong>Date:</strong> খাবারের তারিখ নির্বাচন করুন অথবা বর্তমান তারিখে ডিফল্ট রাখুন।</li>
                 <li><strong>Meal Type:</strong> খাবারের ধরন নির্বাচন করুন (নাস্তা, দুপুরের খাবার, রাতের খাবার)।</li>
@@ -603,5 +592,4 @@
 <a href="mixtard/index.html">Mixtard Insulin Tool</a>
 </body>
 </html>
-
 
