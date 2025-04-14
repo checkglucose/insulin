@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixtard Insulin Meal Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f5f5, #d1e2e8);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #4CAF50;
+            margin-top: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 20px;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px 30px;
+        }
+
+        .language-switch {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        .language-switch button {
+            background-color: #007bff;
+            color: white;
+            font-size: 1.1em;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .language-switch button:hover {
+            background-color: #0056b3;
+        }
+
+        #meal-form {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            font-size: 1em;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .reset-button {
+            background-color: #dc3545;
+        }
+
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        td {
+            font-size: 0.95em;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        #graph-container {
+            margin-top: 50px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        #instructions {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        #instructions h2 {
+            font-size: 2em;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        #instructions ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #instructions li {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .normal-range {
+            background-color: rgba(0, 255, 0, 0.2);
+        }
+
+        .normal-range-postmeal {
+            background-color: rgba(0, 0, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Language Switcher -->
+    <div class="language-switch">
+        <button onclick="switchLanguage('en')">English</button>
+        <button onclick="switchLanguage('bn')">বাংলা</button>
+    </div>
+
+    <!-- Instructions Section -->
+    <div id="instructions">
+        <h2 id="instructions-header">How to Use the Insulin Tracker</h2>
+        <ul id="instructions-list">
+            <li><strong>Date:</strong> Select the date of the meal or leave it blank to default to the current date.</li>
+            <li><strong>Meal Type:</strong> Choose the type of meal (Breakfast, Lunch, Dinner).</li>
+            <li><strong>Fasting Glucose:</strong> Enter your fasting glucose value before the meal (mmol/L).</li>
+            <li><strong>Plates:</strong> Enter the number of plates for the meal (estimate of carbs).</li>
+            <li><strong>Short-acting Insulin:</strong> Enter the amount of short-acting insulin used for the meal (units).</li>
+            <li><strong>Post-meal Glucose:</strong> Enter your glucose level after the meal (mmol/L).</li>
+            <li><strong>Long-acting Insulin (Once Daily):</strong> Enter the amount of Long-acting insulin that is used once daily.</li>
+            <li><strong>Long Adjustment:</strong> This field will automatically adjust based on your fasting glucose for Breakfast.</li>
+            <li><strong>Delete Row:</strong> You can delete a specific row by clicking the "Delete" button in the corresponding row.</li>
+        </ul>
+        <p><strong>Note:</strong> This tracker helps you keep track of your insulin doses and glucose levels for better diabetes management.</p>
+    </div>
+
+    <!-- Meal Tracker Form -->
+    <div id="tracker">
+        <form id="meal-form">
+            <input type="date" id="meal-date" />
+            <select id="meal-type">
+                <option value="">Select Meal</option>
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+            </select>
+            <input type="number" id="fasting-glucose" placeholder="Fasting Glucose" />
+            <input type="number" id="plates" placeholder="Number of Plates" />
+            <input type="number" id="short-insulin" placeholder="Short-acting Insulin" />
+            <input type="number" id="post-glucose" placeholder="Post-meal Glucose" />
+            <input type="number" id="long-insulin" placeholder="Long-acting Insulin (Once Daily)" />
+            <p id="live-long-adjustment"></p>
+            <button type="button" onclick="addMeal()">Add Meal</button>
+            <button type="button" class="reset-button" onclick="resetData()">Reset Data</button>
+        </form>
+    </div>
+
+    <!-- Meal Table -->
+    <table id="meal-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Meal</th>
+                <th>Fasting Glucose</th>
+                <th>Plates</th>
+                <th>Short-acting Insulin</th>
+                <th>Post-meal Glucose</th>
+                <th>Long-acting Insulin</th>
+                <th>Insulin per Plate</th>
+                <th>Glucose Status</th>
+                <th>Correction Insulin</th>
+                <th>Long Adjustment</th>
+                <th>Low Glucose Alert</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Glucose Level Graph -->
+    <div id="graph-container">
+        <h2>Glucose Level Chart</h2>
+        <canvas id="glucose-chart" width="600" height="400"></canvas>
+    </div>
+</div>
+
+<script>
+    let meals = JSON.parse(localStorage.getItem('meals')) || [];
+    let language = 'en'; // Default language
+
+    // Initialize Chart.js graph
+    const ctx = document.getElementById('glucose-chart').getContext('2d');
+    const glucoseChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Meal dates will go here
+            datasets: [
+                {
+                    label: 'Fasting Glucose',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: false,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Post-meal Glucose (2hrs)',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: false,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Normal Range (Fasting: 4.0-7.0 mmol/L)',
+                    data: [7.0, 7.0, 4.0, 4.0], // Fasting range: 4.0-7.0
+                    borderColor: 'rgba(0, 255, 0, 0.2)',
+                    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                    fill: true,
+                    borderWidth: 0
+                },
+                {
+                    label: 'Normal Range (Post-meal: <10.0 mmol/L)',
+                    data: [10.0, 10.0, 10.0, 10.0], // Post-meal range: < 10.0
+                    borderColor: 'rgba(0, 0, 255, 0.2)',
+                    backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                    fill: true,
+                    borderWidth: 0
+                }
+            ]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    suggestedMin: 3,
+                    suggestedMax: 12
+                }
+            }
+        }
+    });
+
+    function switchLanguage(lang) {
+        language = lang;
+        updateContent();
+    }
+
+    function updateContent() {
+        if (language === 'en') {
+            document.getElementById('instructions-header').textContent = "How to Use the Meal Tracker";
+            document.getElementById('instructions-list').innerHTML = `
+                <li><strong>Date:</strong> Select the date of the meal or leave it blank to default to the current date.</li>
+                <li><strong>Meal Type:</strong> Choose the type of meal (Breakfast, Lunch, Dinner).</li>
+                <li><strong>Fasting Glucose:</strong> Enter your fasting glucose value before the meal (mmol/L).</li>
+                <li><strong>Plates:</strong> Enter the number of plates for the meal.</li>
+                <li><strong>Short-acting Insulin:</strong> Enter the amount of short-acting insulin used for the meal (units).</li>
+                <li><strong>Post-meal Glucose:</strong> Enter your glucose level after the meal (mmol/L). The status will be displayed (e.g., Too High, Too Low, or OK).</li>
+                <li><strong>Long-acting Insulin (Once Daily):</strong> Enter the amount of Long-acting insulin that is used once daily.</li>
+                <li><strong>Long Adjustment:</strong> This field will automatically adjust based on your fasting glucose for Breakfast.</li>
+                <li><strong>Delete Row:</strong> You can delete a specific row by clicking the "Delete" button in the corresponding row.</li>
+            `;
+        } else {
+            document.getElementById('instructions-header').textContent = "ইনসুলিন ট্র্যাকার কীভাবে ব্যবহার করবেন";
+            document.getElementById('instructions-list').innerHTML = `
+                <li><strong>Date:</strong> খাবারের তারিখ নির্বাচন করুন অথবা বর্তমান তারিখে ডিফল্ট রাখুন।</li>
+                <li><strong>Meal Type:</strong> খাবারের ধরন নির্বাচন করুন (নাস্তা, দুপুরের খাবার, রাতের খাবার)।</li>
+                <li><strong>Fasting Glucose:</strong>সকালে খাবারের পূর্বে খালিপেটে আপনার গ্লুকোজের মান লিখুন (mmol/L)।</li>
+                <li><strong>Plates:</strong> ভাতের প্লেট সংখ্যা লিখুন।</li>
+                <li><strong>Short-acting Insulin:</strong> খাবারের আগে দেয়া শর্ট-অ্যাক্টিং ইনসুলিনের পরিমাণ লিখুন (ইউনিট)।</li>
+                <li><strong>Post-meal Glucose:</strong> খাবারের ২ ঘন্টা পর আপনার গ্লুকোজের মান লিখুন (mmol/L)। অবস্থান (যেমন, খুব উচ্চ, খুব কম, অথবা ঠিক) দেখানো হবে।</li>
+                <li><strong>Long-acting Insulin (Once Daily):</strong>দিনে একবার দেয়া লং-অ্যাক্টিং ইনসুলিনের পরিমাণ লিখুন (ইউনিট)</li>
+                <li><strong>Long Adjustment:</strong> এই ক্ষেত্রটি স্বয়ংক্রিয়ভাবে প্রাতঃরাশের জন্য আপনার উপবাস গ্লুকোজের উপর ভিত্তি করে সামঞ্জস্য করবে।</li>
+                <li><strong>Row Delete:</strong> আপনি সংশ্লিষ্ট রো-এর "মুছুন" বোতামে ক্লিক করে একটি নির্দিষ্ট রো মুছতে পারবেন।</li>
+            `;
+        }
+    }
+
+    function addMeal() {
+        const date = document.getElementById('meal-date').value || new Date().toISOString().split('T')[0];
+        const meal = document.getElementById('meal-type').value;
+        const fastingGlucose = parseFloat(document.getElementById('fasting-glucose').value) || '';
+        const plates = parseFloat(document.getElementById('plates').value) || '';
+        const shortInsulin = parseInt(document.getElementById('short-insulin').value) || '';
+        const postGlucose = parseFloat(document.getElementById('post-glucose').value) || '';
+        const longInsulin = meal === 'Dinner' ? parseInt(document.getElementById('long-insulin').value) || '' : '';
+
+        if (!meal) return alert('Please select a meal.');
+
+        const insulinPerPlate = (shortInsulin && plates) ? (shortInsulin / plates).toFixed(1) : '';
+        const glucoseStatus = postGlucose === '' ? '' : postGlucose > 10 ? 'Too High (>10.0 mmol/L)' : postGlucose < 4.4 ? 'Too Low (<4.4 mmol/L)' : 'OK';
+        const correctionInsulin = postGlucose === '' ? '' : postGlucose > 10 ? ((postGlucose - 6.7) / 2.8).toFixed(1) : postGlucose < 4.4 ? ((postGlucose - 4.4) / 2.8).toFixed(1) : 0;
+        const breakfastFBS = meals.find(m => m.meal === 'Breakfast' && m.date === date)?.fastingGlucose || (meal === 'Breakfast' ? fastingGlucose : '');
+        const longAdjustment = breakfastFBS === '' ? '' : breakfastFBS > 7.0 ? `Increase long-acting by ${Math.round((breakfastFBS - 7.0) / 2.0)} units` : breakfastFBS < 4.0 ? `Decrease long-acting by ${Math.round(Math.abs((breakfastFBS - 4.0) / 2.0))} units` : 'Stable long-acting dose';
+        const lowGlucoseAlert = correctionInsulin < 0 ? `Low glucose! Take 15g carbs (e.g., juice) now. Reduce next insulin by ${Math.abs(correctionInsulin)} units.` : '';
+
+        const mealData = { date, meal, fastingGlucose, plates, shortInsulin, postGlucose, longInsulin, insulinPerPlate, glucoseStatus, correctionInsulin, longAdjustment, lowGlucoseAlert };
+        meals.push(mealData);
+        localStorage.setItem('meals', JSON.stringify(meals));
+        updateTable();
+        updateGraph();
+        clearForm();
+    }
+
+    function updateTable() {
+        const table = document.getElementById('meal-table').getElementsByTagName('tbody')[0];
+        while (table.rows.length > 0) table.deleteRow(0);
+        
+        meals.forEach((meal, index) => {
+            const row = table.insertRow();
+            row.insertCell().textContent = meal.date;
+            row.insertCell().textContent = meal.meal;
+            row.insertCell().textContent = meal.fastingGlucose;
+            row.insertCell().textContent = meal.plates;
+            row.insertCell().textContent = meal.shortInsulin;
+            row.insertCell().textContent = meal.postGlucose;
+            row.insertCell().textContent = meal.longInsulin;
+            row.insertCell().textContent = meal.insulinPerPlate;
+
+            const statusCell = row.insertCell();
+            statusCell.textContent = meal.glucoseStatus;
+            if (meal.glucoseStatus === 'OK') statusCell.className = 'ok-status';
+
+            row.insertCell().textContent = meal.correctionInsulin;
+            row.insertCell().textContent = meal.longAdjustment;
+            row.insertCell().textContent = meal.lowGlucoseAlert;
+
+            const deleteCell = row.insertCell();
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.className = 'delete-button';
+            deleteButton.onclick = () => deleteMeal(index);
+            deleteCell.appendChild(deleteButton);
+        });
+    }
+
+    function updateGraph() {
+        const dates = [];
+        const fastingGlucose = [];
+        const postMealGlucose = [];
+
+        meals.forEach(meal => {
+            dates.push(meal.date);
+            fastingGlucose.push(meal.fastingGlucose);
+            postMealGlucose.push(meal.postGlucose);
+        });
+
+        glucoseChart.data.labels = dates;
+        glucoseChart.data.datasets[0].data = fastingGlucose;
+        glucoseChart.data.datasets[1].data = postMealGlucose;
+        glucoseChart.update();
+    }
+
+    function deleteMeal(index) {
+        if (confirm('Are you sure you want to delete this meal?')) {
+            meals.splice(index, 1); // Remove the meal at the specified index
+            localStorage.setItem('meals', JSON.stringify(meals));
+            updateTable();
+            updateGraph();
+        }
+    }
+
+    function resetData() {
+        if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+            meals = [];
+            localStorage.removeItem('meals');
+            updateTable();
+            updateGraph();
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('meal-date').value = '';
+        document.getElementById('fasting-glucose').value = '';
+        document.getElementById('plates').value = '';
+        document.getElementById('short-insulin').value = '';
+        document.getElementById('post-glucose').value = '';
+        document.getElementById('long-insulin').value = '';
+        document.getElementById('live-long-adjustment').textContent = '';
+    }
+
+    window.onload = () => {
+        document.getElementById('meal-date').value = new Date().toISOString().split('T')[0];
+        updateTable();
+        updateGraph();
+    };
+</script>
+
+</body>
+</html>
